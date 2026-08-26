@@ -2,104 +2,134 @@
 
 Proyecto integrador del curso de **IA Automation Avanzada**.
 
-El objetivo es construir de forma incremental un sistema agéntico empresarial capaz de recibir consultas de clientes, interpretar su intención, utilizar herramientas externas, mantener contexto, consultar conocimiento corporativo, ejecutar controles de calidad y escalar acciones sensibles a supervisión humana.
+El objetivo es desarrollar de forma incremental una arquitectura agéntica empresarial capaz de recibir consultas, interpretar intenciones, delegar tareas a especialistas, aplicar controles de seguridad y mantener trazabilidad.
 
-El proyecto evoluciona módulo a módulo hasta llegar a una arquitectura completa basada en el patrón **Manager-Worker**.
+---
 
-## Arquitectura actual — Módulo 1
+## Arquitectura actual — Módulo 2
 
-La primera versión implementa un agente base con capacidad de razonamiento y uso autónomo de herramientas.
+La solución evolucionó desde el agente base del Módulo 1 hacia una arquitectura distribuida basada en el patrón **Manager-Worker**.
 
-Flujo actual:
+Flujo general:
 
 ```text
 Chat Trigger
 ↓
-Normalización de entrada
+Normalización
+↓
+Guardrails
 ↓
 AI Agent Manager
-├── OpenAI Chat Model
-└── Gmail Tool
 ↓
-Log de Observabilidad
-```
+Switch de enrutamiento
+├── SALES → Worker Sales
+├── CUSTOMER_SUCCESS → Worker Customer Success
+└── HUMAN_REVIEW → Revisión humana
+↓
+Logs
+↓
+Google Sheets
+Funcionalidades implementadas
+Workflow Manager como orquestador principal.
+Taxonomía cerrada:
+SALES
+CUSTOMER_SUCCESS
+HUMAN_REVIEW
+Structured Output Parser.
+Switch de enrutamiento.
+Worker Sales independiente.
+Worker Customer Success independiente.
+Execute Workflow Trigger en ambos Workers.
+Contratos JSON de entrada y salida.
+Set/Edit Fields para evitar Data Stuffing.
+Wait for child to finish.
+Manejo estructurado de errores.
+Reintentos limitados.
+Human Review.
+Guardrail de datos sensibles.
+Jailbreak Detection.
+Topical Alignment.
+Logs mediante Gmail.
+Persistencia de trazabilidad mediante Google Sheets.
+Contrato Manager-Worker
 
-## Funcionalidades implementadas
+Datos enviados a los Workers:
 
-* Recepción de consultas mediante Chat Trigger.
-* Normalización de variables de entrada.
-* Generación de `trace_id` para trazabilidad.
-* Conservación de `session_id` para futura memoria persistente.
-* AI Agent configurado como Tools Agent.
-* System Prompt estructurado con rol, ámbito, objetivos, reglas y escalamiento.
-* Guardrail de máximo 5 iteraciones.
-* Integración con OpenAI.
-* Gmail conectado como Tool lateral del agente.
-* Activación autónoma de Gmail únicamente cuando se requiere seguimiento humano.
-* Log final de observabilidad mediante Gmail.
-* Pruebas con casos donde la Tool se activa y casos donde no se utiliza.
-
-## Variables principales
-
-```json
 {
   "trace_id": "identificador de ejecución",
   "session_id": "identificador de sesión",
-  "channel": "chat",
   "user_name": "Usuario",
-  "message": "mensaje recibido"
+  "message": "mensaje recibido",
+  "intent": "SALES | CUSTOMER_SUCCESS"
 }
-```
 
-Estas variables se mantendrán durante la evolución del proyecto para facilitar la integración futura de memoria, sub-workflows y trazabilidad.
+Salida estándar:
 
-## Estructura del repositorio
-
-```text
+{
+  "status": "success | error",
+  "worker": "sales | customer_success",
+  "respuesta_propuesta": "",
+  "contexto_utilizado": "",
+  "fuente": "",
+  "message": ""
+}
+Estructura del repositorio
 modulo1/
     checkpoint1_lucas_taranto.json
 
+modulo2/
+    manager_modulo2_taranto_lucas.json
+    worker1_modulo2_taranto_lucas.json
+    worker2_modulo2_taranto_lucas.json
+
 README.md
-```
+Checkpoint 1
 
-En los próximos checkpoints se incorporarán nuevos módulos manteniendo y extendiendo la arquitectura existente.
+Implementación inicial del agente base con:
 
-## Roadmap del proyecto
+Chat Trigger.
+Normalización.
+AI Agent.
+OpenAI.
+Gmail como Tool.
+Trazabilidad mediante trace_id.
+Logs de observabilidad.
+Checkpoint 2
 
-* Módulo 1: Agente base y Tools Agent.
-* Módulo 2: Arquitectura Manager-Worker y sub-workflows.
-* Módulo 3: Memoria persistente con Session_ID.
-* Módulo 4: Integraciones empresariales.
-* Módulo 5: Base documental y RAG.
-* Módulo 6: Voice AI.
-* Módulo 7: Especialización vertical de negocio.
-* Módulo 8: Supervisor AI-as-a-Judge.
-* Módulo 9: Gobernanza, métricas, trazabilidad y ROI.
-* Módulo 10: Propuesta técnico-comercial.
-* Módulo 11: Proyecto Final Integrador.
+Evolución hacia arquitectura multi-agente distribuida con:
 
-## Seguridad y control
+Manager-Worker.
+Dos sub-workflows independientes.
+Contratos de datos.
+Guardrails.
+Human Review.
+Manejo de errores.
+Logs y persistencia en Google Sheets.
 
-La primera versión ya incorpora controles básicos que se mantendrán durante toda la evolución del sistema:
+Las rutas SALES, CUSTOMER_SUCCESS, HUMAN_REVIEW y los Guardrails fueron validadas mediante pruebas manuales.
 
-* límite máximo de iteraciones;
-* restricciones explícitas dentro del System Prompt;
-* uso de herramientas únicamente cuando existe una necesidad operativa;
-* destinatarios de Gmail definidos previamente;
-* separación entre razonamiento y ejecución de acciones;
-* trazabilidad mediante `trace_id`;
-* supervisión mediante logs.
+Roadmap
+Módulo 1: Agente base.
+Módulo 2: Manager-Worker y sub-workflows.
+Módulo 3: Memoria persistente.
+Módulo 4: Integraciones empresariales.
+Módulo 5: RAG y base documental.
+Módulo 6: Voice AI.
+Módulo 7: Especialización vertical.
+Módulo 8: AI-as-a-Judge.
+Módulo 9: Gobernanza, métricas y ROI.
+Módulo 10: Propuesta técnico-comercial.
+Módulo 11: Proyecto Final Integrador.
+Seguridad
 
-Las credenciales, API Keys y tokens privados no se almacenan dentro de este repositorio.
+La solución incorpora:
 
-## Checkpoint 1
+guardrails preventivos;
+taxonomía cerrada;
+Human Review;
+manejo estructurado de errores;
+trazabilidad mediante trace_id;
+logs;
+persistencia de auditoría.
 
-Archivo entregable:
-
-`modulo1/checkpoint1_lucas_taranto.json`
-
-El workflow fue validado mediante pruebas manuales en n8n, incluyendo:
-
-1. Un caso comercial que activa de forma autónoma la herramienta Gmail.
-2. Un caso informativo donde el agente decide no utilizar la herramienta.
-3. Envío correcto del log de observabilidad al finalizar la ejecución.
+Las credenciales, API Keys y tokens privados no se almacenan en el repositorio.
