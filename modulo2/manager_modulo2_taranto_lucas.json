@@ -1,0 +1,1780 @@
+{
+  "name": "manager_modulo2_taranto_lucas",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a30d8ea-0924-4a90-9a15-46f1f748fd14",
+              "name": "trace_id",
+              "value": "={{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7c87ad88-ca13-4e03-a800-5408b0fad295",
+              "name": "session_id",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "c25d80a0-6cc3-48a7-b0c8-2b3a0ac7fc06",
+              "name": "channel",
+              "value": "chat",
+              "type": "string"
+            },
+            {
+              "id": "68eb7456-6913-4faf-a3a8-adf44ea0e76a",
+              "name": "user_name",
+              "value": "Usuario",
+              "type": "string"
+            },
+            {
+              "id": "c1925138-41ae-4930-a4f6-b2c3375f6187",
+              "name": "message",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -2048,
+        624
+      ],
+      "id": "5ec0cb6d-878d-4fbc-8db4-457d78498069",
+      "name": "02 - Normalizar Entrada"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -2256,
+        624
+      ],
+      "id": "f1455248-fe4e-4b45-b88a-c5b3080146d6",
+      "name": "01 - Chat Trigger",
+      "webhookId": "5d264e46-e8a1-4d3a-91b8-d96009f0d169"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "## ROL\n\nSos el Manager de un sistema multi-agente de Sales Ops y Customer Success para un e-commerce.\n\nTu función es analizar el mensaje recibido, clasificarlo dentro de una taxonomía cerrada y decidir qué Worker especialista debe procesarlo.\n\nNo debés resolver la consulta del usuario. Tu tarea es únicamente clasificar y delegar.\n\n## ÁMBITO\n\nSolo podés clasificar una consulta en una de estas tres categorías:\n\n1. SALES\n2. CUSTOMER_SUCCESS\n3. HUMAN_REVIEW\n\n## TAXONOMÍA\n\n### SALES\n\nUsá esta categoría cuando la intención principal esté claramente relacionada con una etapa previa a la compra o con una oportunidad comercial.\n\nEjemplos:\n\n* intención de compra;\n* interés comercial;\n* consulta previa a una compra;\n* solicitud de contacto comercial;\n* comparación de opciones antes de comprar;\n* pedido de asesoramiento comercial;\n* oportunidad concreta de venta.\n\nDebe existir una intención comercial identificable.\n\nPara esta categoría:\n\n* `intent = SALES`\n* `worker = sales`\n* `requires_human = false`\n\n### CUSTOMER_SUCCESS\n\nUsá esta categoría únicamente cuando el usuario describa de forma suficientemente concreta una necesidad de atención o postventa que pueda ser delegada al Worker Customer Success.\n\nDebe existir un problema, consulta o gestión identificable.\n\nEjemplos:\n\n* problema concreto con un pedido;\n* producto roto, faltante o incorrecto;\n* consulta sobre facturación o cobros;\n* solicitud de cambio o devolución;\n* demora o estado de una compra;\n* reclamo concreto;\n* problema posterior a una compra claramente descripto;\n* necesidad específica de soporte o atención postventa.\n\nNO utilices CUSTOMER_SUCCESS cuando el usuario solamente mencione que existe:\n\n* \"un problema\";\n* \"algo raro\";\n* \"un tema con una compra\";\n* \"una situación con un pedido\";\n* o cualquier expresión vaga similar,\n\nsin explicar cuál es la necesidad concreta.\n\nLa sola existencia de una compra previa no alcanza para clasificar una consulta como CUSTOMER_SUCCESS.\n\nSi existe una compra previa pero no puede identificarse claramente qué necesita resolver el usuario, utilizá HUMAN_REVIEW.\n\nPara esta categoría:\n\n* `intent = CUSTOMER_SUCCESS`\n* `worker = customer_success`\n* `requires_human = false`\n\n### HUMAN_REVIEW\n\nUsá esta categoría cuando no exista información suficiente para realizar una delegación segura.\n\nDebe utilizarse cuando:\n\n* la intención principal no pueda determinarse con suficiente claridad;\n* el mensaje sea ambiguo;\n* el mensaje contenga información contradictoria;\n* falten datos para decidir entre SALES y CUSTOMER_SUCCESS;\n* el usuario mencione una compra o pedido pero no explique cuál es el problema;\n* el usuario solicite expresamente intervención humana ante una situación excepcional;\n* exista una situación legal, contractual, sensible o de riesgo;\n* el caso requiera una decisión que exceda el alcance de los Workers;\n* delegar automáticamente pueda generar una clasificación incorrecta.\n\nTambién debés utilizar HUMAN_REVIEW cuando el usuario mencione palabras asociadas a una compra pero no describa una tarea concreta.\n\nEjemplos que deben clasificarse como HUMAN_REVIEW:\n\n\"Pasó algo raro con una compra y necesito que alguien lo revise.\"\n\n\"Tengo un problema con un pedido pero no sé cómo explicarlo.\"\n\n\"Necesito ayuda con una situación relacionada con una compra.\"\n\n\"Necesito que alguien revise mi caso antes de realizar cualquier gestión.\"\n\n\"Tengo una situación excepcional y prefiero hablar con una persona.\"\n\nLa existencia de palabras como \"compra\", \"pedido\", \"producto\", \"venta\" o \"cliente\" NO determina por sí sola la categoría.\n\nSi no podés identificar con claridad una tarea concreta de SALES o CUSTOMER_SUCCESS, seleccioná HUMAN_REVIEW.\n\nAnte duda real entre dos categorías, priorizá HUMAN_REVIEW.\n\nPara esta categoría:\n\n* `intent = HUMAN_REVIEW`\n* `worker = human_review`\n* `requires_human = true`\n\n## OBJETIVO\n\nAnalizá únicamente el mensaje recibido y seleccioná el especialista adecuado.\n\nTu resultado será utilizado por un nodo de enrutamiento para decidir qué sub-workflow debe ejecutarse.\n\nDebés mantenerte estrictamente dentro de la taxonomía definida.\n\nAntes de seleccionar una categoría, evaluá:\n\n1. ¿Existe una intención comercial concreta previa a una compra?\n\n   * Si la respuesta es sí, utilizá SALES.\n\n2. ¿Existe un problema o gestión postventa concreta y claramente identificable?\n\n   * Si la respuesta es sí, utilizá CUSTOMER_SUCCESS.\n\n3. ¿El mensaje es ambiguo, incompleto, excepcional, sensible o no permite identificar claramente una tarea?\n\n   * Si la respuesta es sí, utilizá HUMAN_REVIEW.\n\n## REGLAS\n\nNo respondas la consulta del cliente.\n\nNo redactes una solución al problema planteado.\n\nNo inventes información.\n\nNo ejecutes acciones comerciales.\n\nNo envíes correos.\n\nNo modifiques datos.\n\nNo realices devoluciones, reembolsos, descuentos, cancelaciones ni cambios de información.\n\nNo clasifiques fuera de la taxonomía definida.\n\nNo infieras una intención únicamente por palabras clave aisladas.\n\nClasificá según el objetivo completo del mensaje.\n\nNo utilices CUSTOMER_SUCCESS solamente porque el mensaje menciona una compra previa.\n\nNo utilices SALES solamente porque aparecen palabras relacionadas con productos o precios.\n\nSi el mensaje corresponde claramente a una consulta previa a una compra, utilizá SALES.\n\nSi el mensaje describe claramente una gestión o problema postventa, utilizá CUSTOMER_SUCCESS.\n\nSi existe ambigüedad real, información insuficiente, riesgo o sensibilidad, utilizá HUMAN_REVIEW.\n\nAnte duda, priorizá HUMAN_REVIEW.\n\n## ESCALAMIENTO\n\nHUMAN_REVIEW funciona como la vía de escape segura del sistema.\n\nDebe utilizarse cuando delegar automáticamente a Sales o Customer Success pueda producir una clasificación incorrecta o cuando la situación requiera supervisión humana.\n\nLos casos legales, contractuales, sensibles, excepcionales o insuficientemente descriptos deben ser escalados.\n\nTu única responsabilidad es seleccionar la ruta correcta para que otro componente continúe el procesamiento.\n\nNo intentes resolver por tu cuenta los casos que requieren escalamiento.\n",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        16,
+        -32
+      ],
+      "id": "5de27042-45e8-4d41-bfd2-2ddf4d134059",
+      "name": "03 - AI Agent Manager"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        208
+      ],
+      "id": "97035135-1dba-4b89-8ab3-2ada778eb5ce",
+      "name": "04 - OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "m6mEksrTKCsuZU3y",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"intent\": {\n      \"type\": \"string\",\n      \"enum\": [\"SALES\", \"CUSTOMER_SUCCESS\", \"HUMAN_REVIEW\"]\n    },\n    \"worker\": {\n      \"type\": \"string\",\n      \"enum\": [\"sales\", \"customer_success\", \"human_review\"]\n    },\n    \"requires_human\": {\n      \"type\": \"boolean\"\n    }\n  },\n  \"required\": [\"intent\", \"worker\", \"requires_human\"],\n  \"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        192
+      ],
+      "id": "e0a46902-ed0b-4254-b8bd-8641b917d56b",
+      "name": "05 - Parser Clasificación Manager"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.worker }}",
+                    "rightValue": "sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "91383592-868b-4bcb-97c8-f79511265872"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SALES"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "aac78423-e84e-49fd-89af-660cfca6d1d4",
+                    "leftValue": "={{ $json.output.worker }}",
+                    "rightValue": "customer_success",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CUSTOMER_SUCCESS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d41317e4-ef68-455e-8c25-9d45335d4c5b",
+                    "leftValue": "={{ $json.output.worker }}",
+                    "rightValue": "human_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HUMAN_REVIEW"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -48
+      ],
+      "id": "928d1fbe-0a62-4b1e-b7ab-c0b151dfd1eb",
+      "name": "06 - Switch - Enrutar Worker"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5002fdb7-033a-4c46-ac0c-f72351529db9",
+              "name": "trace_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "74f53c40-8acd-4dc4-821a-2e0532a4b453",
+              "name": "session_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6412bf2d-7a4a-4302-96e7-29d213294bbf",
+              "name": "user_name",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.user_name }}",
+              "type": "string"
+            },
+            {
+              "id": "c755cf7d-56d1-4454-aeb4-bc79f5f2b25a",
+              "name": "message",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "ee87f1a5-bbcd-4d60-abef-20cd2ec979ae",
+              "name": "intent",
+              "value": "={{ $('03 - AI Agent Manager').item.json.output.intent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1088,
+        -352
+      ],
+      "id": "afefa227-577a-4bf3-95bd-0a9c2ac3b3f9",
+      "name": "07 - Preparar Payload Sales"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YfY9NHyitUPN1Jfm",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YfY9NHyitUPN1Jfm",
+          "cachedResultName": "worker1_modulo2_taranto_lucas"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "trace_id": "={{ $json.trace_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "user_name": "={{ $json.user_name }}",
+            "message": "={{ $json.message }}",
+            "intent": "={{ $json.intent }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "trace_id",
+              "displayName": "trace_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_name",
+              "displayName": "user_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        -352
+      ],
+      "id": "8d686be3-3ff0-4a47-97c0-359caebe1237",
+      "name": "08 - Ejecutar Worker Sales",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "notesInFlow": false,
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5002fdb7-033a-4c46-ac0c-f72351529db9",
+              "name": "trace_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "74f53c40-8acd-4dc4-821a-2e0532a4b453",
+              "name": "session_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6412bf2d-7a4a-4302-96e7-29d213294bbf",
+              "name": "user_name",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.user_name }}",
+              "type": "string"
+            },
+            {
+              "id": "c755cf7d-56d1-4454-aeb4-bc79f5f2b25a",
+              "name": "message",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "ee87f1a5-bbcd-4d60-abef-20cd2ec979ae",
+              "name": "intent",
+              "value": "={{ $('03 - AI Agent Manager').item.json.output.intent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1088,
+        -48
+      ],
+      "id": "9d07cef4-03b9-4ca1-9b02-e74980dd9d7c",
+      "name": "09 - Preparar Payload Customer Success"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Xpuc0druxNjrsokf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Xpuc0druxNjrsokf",
+          "cachedResultName": "M2 - Worker Customer Success"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "trace_id": "={{ $json.trace_id }}",
+            "session_id": "={{ $json.session_id }}",
+            "user_name": "={{ $json.user_name }}",
+            "message": "={{ $json.message }}",
+            "intent": "={{ $json.intent }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "trace_id",
+              "displayName": "trace_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_name",
+              "displayName": "user_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        -48
+      ],
+      "id": "a4347457-66cf-4cb2-bdf3-0f333330d10c",
+      "name": "10 - Ejecutar Worker Customer Success",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "Revisión humana requerida - Manager IA",
+        "emailType": "text",
+        "message": "=`Trace ID: {{ $('02 - Normalizar Entrada').item.json.trace_id }}\n\nSession ID: {{ $('02 - Normalizar Entrada').item.json.session_id }}\n\nUsuario: {{ $('02 - Normalizar Entrada').item.json.user_name }}\n\nMensaje: {{ $('02 - Normalizar Entrada').item.json.message }}\n\nClasificación: {{ $('03 - AI Agent Manager').item.json.output.intent }}\n\nMotivo: El Manager derivó el caso a revisión humana por ambigüedad o sensibilidad.`",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        256
+      ],
+      "id": "6b2f578c-c0d4-42f4-a585-16f5bc412275",
+      "name": "11 - HUMAN REVIEW - Notificar",
+      "webhookId": "508b3f5f-401d-49bf-a024-267e1eae74a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "LOG M2 - Worker Sales",
+        "emailType": "text",
+        "message": "=EJECUCIÓN MULTI-AGENTE - SALES\n\nTrace ID:\n{{ $('02 - Normalizar Entrada').item.json.trace_id }}\n\nSession ID:\n{{ $('02 - Normalizar Entrada').item.json.session_id }}\n\nUsuario:\n{{ $('02 - Normalizar Entrada').item.json.user_name }}\n\nMensaje original:\n{{ $('02 - Normalizar Entrada').item.json.message }}\n\nIntención detectada:\n{{ $('03 - AI Agent Manager').item.json.output.intent }}\n\nWorker invocado:\n{{ $('08 - Ejecutar Worker Sales').item.json.worker }}\n\nPARÁMETROS ENVIADOS AL WORKER\n\ntrace_id:\n{{ $('07 - Preparar Payload Sales').item.json.trace_id }}\n\nsession_id:\n{{ $('07 - Preparar Payload Sales').item.json.session_id }}\n\nuser_name:\n{{ $('07 - Preparar Payload Sales').item.json.user_name }}\n\nmessage:\n{{ $('07 - Preparar Payload Sales').item.json.message }}\n\nintent:\n{{ $('07 - Preparar Payload Sales').item.json.intent }}\n\nRESULTADO DEL WORKER\n\nStatus:\n{{ $('08 - Ejecutar Worker Sales').item.json.status }}\n\nRespuesta propuesta:\n{{ $('08 - Ejecutar Worker Sales').item.json.respuesta_propuesta }}\n\nMensaje de contingencia:\n{{ $('08 - Ejecutar Worker Sales').item.json.message }}\n\nEstado de ejecución:\n{{ $('08 - Ejecutar Worker Sales').item.json.status === 'success' ? 'Completado correctamente' : 'Error controlado - Worker devolvió contingencia estructurada' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -352
+      ],
+      "id": "561eb97b-2cca-4360-8f74-365900591bbd",
+      "name": "12 - LOG - Sales",
+      "webhookId": "508b3f5f-401d-49bf-a024-267e1eae74a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "LOG M2 - Worker Customer Success",
+        "emailType": "text",
+        "message": "=EJECUCIÓN MULTI-AGENTE - CUSTOMER SUCCESS\n\nTrace ID:\n{{ $('02 - Normalizar Entrada').item.json.trace_id }}\n\nSession ID:\n{{ $('02 - Normalizar Entrada').item.json.session_id }}\n\nUsuario:\n{{ $('02 - Normalizar Entrada').item.json.user_name }}\n\nMensaje original:\n{{ $('02 - Normalizar Entrada').item.json.message }}\n\nIntención detectada:\n{{ $('03 - AI Agent Manager').item.json.output.intent }}\n\nWorker invocado:\n{{ $('10 - Ejecutar Worker Customer Success').item.json.worker }}\n\nPARÁMETROS ENVIADOS AL WORKER\n\ntrace_id:\n{{ $('09 - Preparar Payload Customer Success').item.json.trace_id }}\n\nsession_id:\n{{ $('09 - Preparar Payload Customer Success').item.json.session_id }}\n\nuser_name:\n{{ $('09 - Preparar Payload Customer Success').item.json.user_name }}\n\nmessage:\n{{ $('09 - Preparar Payload Customer Success').item.json.message }}\n\nintent:\n{{ $('09 - Preparar Payload Customer Success').item.json.intent }}\n\nRESULTADO DEL WORKER\n\nStatus:\n{{ $('10 - Ejecutar Worker Customer Success').item.json.status }}\n\nRespuesta propuesta:\n{{ $('10 - Ejecutar Worker Customer Success').item.json.respuesta_propuesta }}\n\nMensaje de contingencia:\n{{ $('10 - Ejecutar Worker Customer Success').item.json.message }}\n\nEstado de ejecución:\n{{ $('10 - Ejecutar Worker Customer Success').item.json.status === 'success' ? 'Completado correctamente' : 'Error controlado - Worker devolvió contingencia estructurada' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -48
+      ],
+      "id": "81e36d13-98f0-4db7-b313-60fbea654904",
+      "name": "13 - LOG - Customer Success",
+      "webhookId": "508b3f5f-401d-49bf-a024-267e1eae74a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "LOG M2 - Human Review",
+        "emailType": "text",
+        "message": "=EJECUCIÓN MULTI-AGENTE - HUMAN REVIEW\n\nTrace ID:\n{{ $('02 - Normalizar Entrada').item.json.trace_id }}\n\nSession ID:\n{{ $('02 - Normalizar Entrada').item.json.session_id }}\n\nUsuario:\n{{ $('02 - Normalizar Entrada').item.json.user_name }}\n\nMensaje original:\n{{ $('02 - Normalizar Entrada').item.json.message }}\n\nIntención detectada:\n{{ $('03 - AI Agent Manager').item.json.output.intent }}\n\nRuta seleccionada:\n{{ $('03 - AI Agent Manager').item.json.output.worker }}\n\nRequiere humano:\n{{ $('03 - AI Agent Manager').item.json.output.requires_human }}\n\nRESULTADO\n\nStatus:\nescalado\n\nDetalle:\nEl Manager determinó que el caso requiere revisión humana y generó una notificación al supervisor.\n\nEstado de ejecución:\nEscalado correctamente a revisión humana",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        256
+      ],
+      "id": "0583acc1-0db2-469a-ac00-2b3b69709dd1",
+      "name": "14 - LOG - Human Review",
+      "webhookId": "508b3f5f-401d-49bf-a024-267e1eae74a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 592,
+        "width": 800,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "883855a3-ca38-42f3-a677-2d036af5cd1f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 240,
+        "width": 1104,
+        "color": "#9FE4E5"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        944,
+        -416
+      ],
+      "typeVersion": 1,
+      "id": "f0d2e515-d891-403a-a6c6-d21df389a975",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 240,
+        "width": 1104,
+        "color": "#9FE4E5"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        944,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "76047094-752d-496f-808d-0888c200c540",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 240,
+        "width": 1104,
+        "color": "#9FE4E5"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        944,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "86e865d7-4dd3-439e-9129-6beac610dd4f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "text": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+        "guardrails": {
+          "customRegex": {
+            "regex": [
+              {
+                "name": "Tarjeta 16 dígitos",
+                "value": "\\b\\d{16}\\b"
+              },
+              {
+                "name": "Tarjeta separada por espacios",
+                "value": "\\b\\d{4} \\d{4} \\d{4} \\d{4}\\b"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        624
+      ],
+      "id": "f92dfbd4-2ceb-40c6-8419-bcd55a345540",
+      "name": "03 - Guardrail Datos Sensibles"
+    },
+    {
+      "parameters": {
+        "text": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+        "guardrails": {
+          "jailbreak": {
+            "value": {
+              "threshold": 0.7
+            }
+          },
+          "topicalAlignment": {
+            "value": {
+              "threshold": 0.7,
+              "prompt": "You are a content analysis system that determines if a message stays within the allowed business scope.\n\nBUSINESS SCOPE:\nSales, pre-sales, products, purchases, orders, payments, billing, deliveries, returns, exchanges, complaints, post-sales support and customer service for an e-commerce business.\n\nAllow messages related to:\n- intention to purchase;\n- product or service inquiries;\n- commercial contact;\n- orders;\n- deliveries;\n- billing and payments;\n- returns and exchanges;\n- damaged, missing or incorrect products;\n- post-sale assistance;\n- complaints;\n- requests for human assistance related to the e-commerce business.\n\nFlag content that is unrelated to this business scope.\n\nDo not flag a message merely because it contains dissatisfaction, a complaint, a legal concern or a request for human review if it is related to the e-commerce business.\n\nIf the message is ambiguous but still potentially related to an e-commerce transaction or customer relationship, allow it to pass so the Manager can decide whether to route it to HUMAN_REVIEW."
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        -16
+      ],
+      "id": "6c8e2f45-ab40-4fb0-80a0-eec23fb75bb7",
+      "name": "04 - Guardrail Seguridad y Alcance"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1296,
+        176
+      ],
+      "id": "f5452bb9-9a2b-4162-b66b-1a933c99a1df",
+      "name": "05 - OpenAI Chat Model Guardrail",
+      "credentials": {
+        "openAiApi": {
+          "id": "m6mEksrTKCsuZU3y",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "847f8346-4ded-449d-9c07-c4a5f4c27d1b",
+              "name": "intent",
+              "value": "HUMAN_REVIEW",
+              "type": "string"
+            },
+            {
+              "id": "a69b9f24-d652-4910-be94-19c187860c7d",
+              "name": "worker",
+              "value": "human_review",
+              "type": "string"
+            },
+            {
+              "id": "b558785f-e011-41e6-b1f3-3fb1a65b2e86",
+              "name": "requires_human",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "726c87f7-25c3-47c7-8542-4fe9e0df35f1",
+              "name": "guardrail_triggered",
+              "value": "true",
+              "type": "string"
+            },
+            {
+              "id": "e000884b-9b68-46b9-a75a-040ec8a55987",
+              "name": "trace_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "dcc12a47-ac7e-4e01-bdcf-8053aabc82a6",
+              "name": "session_id",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "156eff37-9e50-49e6-8786-01eda4fed68a",
+              "name": "user_name",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.user_name }}",
+              "type": "string"
+            },
+            {
+              "id": "02e81b42-d59e-4357-8789-ce3808d0d78c",
+              "name": "message",
+              "value": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "5c4df983-0b08-446b-8087-eb435fff4b68",
+              "name": "guardrail_result",
+              "value": "={{ JSON.stringify($json) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1040,
+        640
+      ],
+      "id": "d890cbb6-d0ec-4c21-a845-e7fe5b536ed9",
+      "name": "15 - Preparar Guardrail Review"
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "Guardrail activado - Revisión humana",
+        "emailType": "text",
+        "message": "=GUARDRAIL ACTIVADO - REVISIÓN HUMANA  Trace ID: {{ $('15 - Preparar Guardrail Review').item.json.trace_id }}  Session ID: {{ $('15 - Preparar Guardrail Review').item.json.session_id }}  Usuario: {{ $('15 - Preparar Guardrail Review').item.json.user_name }}  Mensaje original: {{ $('15 - Preparar Guardrail Review').item.json.message }}  Ruta: HUMAN_REVIEW  Requiere humano: true  Motivo / detalle del Guardrail: {{ $('15 - Preparar Guardrail Review').item.json.guardrail_result }}  Estado: Mensaje bloqueado preventivamente antes de ingresar al AI Agent Manager.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -832,
+        640
+      ],
+      "id": "a35871e2-27ea-48a6-b2e9-01a188831a95",
+      "name": "16 - Guardrail Review - Notificar",
+      "webhookId": "3c5dbb11-da1d-49ee-883c-57e6c257e027",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lucas.tarantostevanovich@gmail.com",
+        "subject": "LOG M2 - Human Review",
+        "emailType": "text",
+        "message": "=EJECUCIÓN MULTI-AGENTE - GUARDRAIL REVIEW\n\nTrace ID:\n{{ $('15 - Preparar Guardrail Review').item.json.trace_id }}\n\nSession ID:\n{{ $('15 - Preparar Guardrail Review').item.json.session_id }}\n\nUsuario:\n{{ $('15 - Preparar Guardrail Review').item.json.user_name }}\n\nMensaje original:\n{{ $('15 - Preparar Guardrail Review').item.json.message }}\n\nRuta seleccionada:\nhuman_review\n\nGuardrail activado:\ntrue\n\nDetalle:\n{{ $('15 - Preparar Guardrail Review').item.json.guardrail_result }}\n\nRESULTADO\n\nStatus:\nbloqueado\n\nDetalle:\nLa entrada fue detenida por un Guardrail antes de llegar al AI Agent Manager y fue derivada a revisión humana.\n\nEstado de ejecución:\nEscalado correctamente a revisión humana",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -656,
+        640
+      ],
+      "id": "10f62530-5356-45be-90b1-733f7a6ff31d",
+      "name": "17 - LOG - Guardrail Review",
+      "webhookId": "508b3f5f-401d-49bf-a024-267e1eae74a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "67KB1Zo3geLlFn5c",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM",
+          "mode": "list",
+          "cachedResultName": "CODER LOGS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now }}",
+            "Trace ID": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}",
+            "Session ID": "={{ $('02 - Normalizar Entrada').item.json.session_id }}",
+            "Usuario": "={{ $('02 - Normalizar Entrada').item.json.user_name }}",
+            "Mensaje": "={{ $('02 - Normalizar Entrada').item.json.message }}",
+            "Ruta": "SALES",
+            "Worker": "={{ $('08 - Ejecutar Worker Sales').item.json.worker }}",
+            "Status": "={{ $('08 - Ejecutar Worker Sales').item.json.status }}",
+            "Respuesta": "={{ $('08 - Ejecutar Worker Sales').item.json.respuesta_propuesta }}",
+            "Guardrail": "NO",
+            "Requiere Humano": "false"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trace ID",
+              "displayName": "Trace ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ruta",
+              "displayName": "Ruta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Worker",
+              "displayName": "Worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Respuesta",
+              "displayName": "Respuesta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Guardrail",
+              "displayName": "Guardrail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Requiere Humano",
+              "displayName": "Requiere Humano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1824,
+        -352
+      ],
+      "id": "fcfd2391-854e-42dd-aee6-00371f758674",
+      "name": "18 - SHEET LOG - Sales",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VKcGSYFVtEutvDK0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM",
+          "mode": "list",
+          "cachedResultName": "CODER LOGS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now }}",
+            "Trace ID": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}\n",
+            "Session ID": "={{ $('02 - Normalizar Entrada').item.json.session_id }}\n",
+            "Usuario": "={{ $('02 - Normalizar Entrada').item.json.user_name }}\n",
+            "Mensaje": "={{ $('02 - Normalizar Entrada').item.json.message }}\n",
+            "Ruta": "CUSTOMER_SUCCESS",
+            "Worker": "={{ $('10 - Ejecutar Worker Customer Success').item.json.worker }}\n\n",
+            "Status": "={{ $('10 - Ejecutar Worker Customer Success').item.json.status }}\n",
+            "Respuesta": "={{ $('10 - Ejecutar Worker Customer Success').item.json.respuesta_propuesta }}\n",
+            "Guardrail": "NO",
+            "Requiere Humano": "false"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trace ID",
+              "displayName": "Trace ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ruta",
+              "displayName": "Ruta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Worker",
+              "displayName": "Worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Respuesta",
+              "displayName": "Respuesta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Guardrail",
+              "displayName": "Guardrail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Requiere Humano",
+              "displayName": "Requiere Humano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1824,
+        -48
+      ],
+      "id": "b4bf0483-7284-441e-bc46-e4426bb2385d",
+      "name": "19 - SHEET LOG - Customer Success",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VKcGSYFVtEutvDK0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM",
+          "mode": "list",
+          "cachedResultName": "CODER LOGS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now }}",
+            "Trace ID": "={{ $('02 - Normalizar Entrada').item.json.trace_id }}\n",
+            "Session ID": "={{ $('02 - Normalizar Entrada').item.json.session_id }}\n",
+            "Usuario": "={{ $('02 - Normalizar Entrada').item.json.user_name }}\n",
+            "Mensaje": "={{ $('02 - Normalizar Entrada').item.json.message }}\n",
+            "Ruta": "HUMAN_REVIEW",
+            "Worker": "=human_review",
+            "Status": "=escalado",
+            "Respuesta": "=Derivado a revisión humana\n",
+            "Guardrail": "NO",
+            "Requiere Humano": "true"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trace ID",
+              "displayName": "Trace ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ruta",
+              "displayName": "Ruta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Worker",
+              "displayName": "Worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Respuesta",
+              "displayName": "Respuesta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Guardrail",
+              "displayName": "Guardrail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Requiere Humano",
+              "displayName": "Requiere Humano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1824,
+        256
+      ],
+      "id": "cce77e60-28ee-4001-bcb2-dcb6bf7a3138",
+      "name": "20 - SHEET LOG - Human Review",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VKcGSYFVtEutvDK0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM",
+          "mode": "list",
+          "cachedResultName": "CODER LOGS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pCp-vrVJPEmgaoL0nniD-7DQN3NP40fYBvRZ9QqLBVM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now }}",
+            "Trace ID": "={{ $('15 - Preparar Guardrail Review').item.json.trace_id }}\n",
+            "Session ID": "={{ $('15 - Preparar Guardrail Review').item.json.session_id }}\n",
+            "Usuario": "={{ $('15 - Preparar Guardrail Review').item.json.user_name }}\n",
+            "Mensaje": "={{ $('15 - Preparar Guardrail Review').item.json.message }}\n",
+            "Ruta": "HUMAN_REVIEW",
+            "Worker": "=human_review\n",
+            "Status": "=bloqueado",
+            "Respuesta": "=Entrada detenida por Guardrail\n",
+            "Guardrail": "={{ 'SI - ' + JSON.stringify($('15 - Preparar Guardrail Review').item.json.guardrail_result) }}",
+            "Requiere Humano": "true"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trace ID",
+              "displayName": "Trace ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ruta",
+              "displayName": "Ruta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Worker",
+              "displayName": "Worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Respuesta",
+              "displayName": "Respuesta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Guardrail",
+              "displayName": "Guardrail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Requiere Humano",
+              "displayName": "Requiere Humano",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -480,
+        640
+      ],
+      "id": "63b8e473-0fb6-4198-bedf-39b6fd32e768",
+      "name": "21 - SHEET LOG - Guardrail Review",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VKcGSYFVtEutvDK0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 1104,
+        "width": 2048,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2336,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "2522ab1e-b88d-47cb-96af-05deafe4bbe8",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 - Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "02 - Normalizar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 - Normalizar Entrada": {
+      "main": [
+        [
+          {
+            "node": "03 - Guardrail Datos Sensibles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 - OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "03 - AI Agent Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 - AI Agent Manager": {
+      "main": [
+        [
+          {
+            "node": "06 - Switch - Enrutar Worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 - Parser Clasificación Manager": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "03 - AI Agent Manager",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 - Switch - Enrutar Worker": {
+      "main": [
+        [
+          {
+            "node": "07 - Preparar Payload Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "09 - Preparar Payload Customer Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "11 - HUMAN REVIEW - Notificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 - Preparar Payload Sales": {
+      "main": [
+        [
+          {
+            "node": "08 - Ejecutar Worker Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 - Preparar Payload Customer Success": {
+      "main": [
+        [
+          {
+            "node": "10 - Ejecutar Worker Customer Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 - Ejecutar Worker Sales": {
+      "main": [
+        [
+          {
+            "node": "12 - LOG - Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 - Ejecutar Worker Customer Success": {
+      "main": [
+        [
+          {
+            "node": "13 - LOG - Customer Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 - HUMAN REVIEW - Notificar": {
+      "main": [
+        [
+          {
+            "node": "14 - LOG - Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 - Guardrail Datos Sensibles": {
+      "main": [
+        [
+          {
+            "node": "04 - Guardrail Seguridad y Alcance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15 - Preparar Guardrail Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 - Guardrail Seguridad y Alcance": {
+      "main": [
+        [
+          {
+            "node": "03 - AI Agent Manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15 - Preparar Guardrail Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 - OpenAI Chat Model Guardrail": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "04 - Guardrail Seguridad y Alcance",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 - Preparar Guardrail Review": {
+      "main": [
+        [
+          {
+            "node": "16 - Guardrail Review - Notificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 - Guardrail Review - Notificar": {
+      "main": [
+        [
+          {
+            "node": "17 - LOG - Guardrail Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 - LOG - Guardrail Review": {
+      "main": [
+        [
+          {
+            "node": "21 - SHEET LOG - Guardrail Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 - LOG - Sales": {
+      "main": [
+        [
+          {
+            "node": "18 - SHEET LOG - Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 - LOG - Customer Success": {
+      "main": [
+        [
+          {
+            "node": "19 - SHEET LOG - Customer Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 - LOG - Human Review": {
+      "main": [
+        [
+          {
+            "node": "20 - SHEET LOG - Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b7ef4322-4d41-42ac-8e13-966fd29306bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a60c95023a773007c4ee81ccff3782755f7e37a664f54df5dce125e50af036d4"
+  },
+  "nodeGroups": [],
+  "id": "0pzX5X3I66eHr6GU",
+  "tags": []
+}

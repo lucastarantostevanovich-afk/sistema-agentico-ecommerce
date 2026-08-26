@@ -1,0 +1,261 @@
+{
+  "name": "worker1_modulo2_taranto_lucas",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "trace_id"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "user_name"
+            },
+            {
+              "name": "message"
+            },
+            {
+              "name": "intent"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f23a9161-499d-43b0-ae8b-b64e2b22b20a",
+      "name": "01 - Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "## ROL\n\nSos el Worker especializado en Sales dentro de un sistema multi-agente para e-commerce.\n\nTu única función es analizar consultas comerciales delegadas por el Manager y proponer el siguiente paso comercial adecuado.\n\n## ÁMBITO\n\nPodés intervenir únicamente en casos relacionados con:\n\n* intención de compra;\n* interés por productos o servicios;\n* solicitudes de contacto comercial;\n* consultas previas a una compra;\n* oportunidades de seguimiento comercial.\n\n## OBJETIVO\n\nAnalizar el mensaje recibido y generar una respuesta comercial propuesta, clara y útil.\n\nDebés identificar si existe una oportunidad comercial concreta y sugerir el próximo paso adecuado.\n\n## REGLAS\n\nNo ejecutes acciones externas.\n\nNo envíes correos.\n\nNo modifiques información de clientes.\n\nNo confirmes precios, descuentos, promociones ni condiciones que no hayan sido proporcionadas.\n\nNo inventes información faltante.\n\nNo resuelvas consultas que pertenezcan a soporte, facturación, devoluciones o reclamos.\n\nSi el mensaje no corresponde a Sales, indicá que debe ser devuelto al Manager para reasignación.\n\n## SALIDA\n\nGenerá únicamente una propuesta comercial útil para que el Manager continúe el proceso.\n\nLa respuesta debe ser breve, clara y basada exclusivamente en la información recibida.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "93fe67f4-291b-42bb-9d90-105415c4ec76",
+      "name": "02 - AI Agent Sales",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        208
+      ],
+      "id": "41189fbd-79aa-4111-b6d2-eec0aed1e402",
+      "name": "03 - OpenAI Chat Model Sales",
+      "credentials": {
+        "openAiApi": {
+          "id": "m6mEksrTKCsuZU3y",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9c27fc8c-b4e4-4b29-bbc9-bae2a4465b8e",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "bf9b531e-4689-41e5-b7b6-ce72fe18fe10",
+              "name": "worker",
+              "value": "sales",
+              "type": "string"
+            },
+            {
+              "id": "0b5982e7-bab5-446d-aaac-6ee66a9387c3",
+              "name": "respuesta_propuesta",
+              "value": "={{ $('02 - AI Agent Sales').item.json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "cfda2144-dff3-45bb-a17a-65ceb7007d31",
+              "name": "contexto_utilizado",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "515b0777-fd48-4287-a97a-0c079ca5e440",
+              "name": "fuente",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ffbde9fa-f57f-4d35-ab1a-73489542223c",
+              "name": "message",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        592,
+        0
+      ],
+      "id": "140dbadc-a3f9-4c2c-9551-311842454f61",
+      "name": "04 - Contrato Salida Sales"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fa688f6-2044-4679-b5da-bf2ea9791863",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "492af518-c3e6-475f-b0b8-6e83ca94f95d",
+              "name": "worker",
+              "value": "sales",
+              "type": "string"
+            },
+            {
+              "id": "c85e05e9-49de-499b-bd0e-9d3408d288bf",
+              "name": "respuesta_propuesta",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "09d0ab0b-7c27-442a-86ed-11812e7a502d",
+              "name": "contexto_utilizado",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "afaa19be-b216-418d-8938-9802be5f2c70",
+              "name": "fuente",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "5cdfa969-a3c6-40e2-8a4a-ae225677b206",
+              "name": "message",
+              "value": "No fue posible completar la tarea.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        496,
+        240
+      ],
+      "id": "a73ddbd1-690d-41d8-9dbf-1b942e547909",
+      "name": "05 - Contrato Error Sales"
+    }
+  ],
+  "pinData": {
+    "01 - Execute Workflow Trigger": [
+      {
+        "json": {
+          "trace_id": "test-001",
+          "session_id": "session-001",
+          "user_name": "Lucas",
+          "message": "Estoy interesado en comprar y quiero que un asesor me contacte.",
+          "intent": "SALES"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "01 - Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "02 - AI Agent Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 - OpenAI Chat Model Sales": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "02 - AI Agent Sales",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 - AI Agent Sales": {
+      "main": [
+        [
+          {
+            "node": "04 - Contrato Salida Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "05 - Contrato Error Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 - Contrato Error Sales": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "236b1c7e-9640-4850-bbec-3683d120f32e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a60c95023a773007c4ee81ccff3782755f7e37a664f54df5dce125e50af036d4"
+  },
+  "nodeGroups": [],
+  "id": "YfY9NHyitUPN1Jfm",
+  "tags": []
+}
